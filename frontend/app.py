@@ -3,10 +3,14 @@ from flask import Flask, jsonify, request, render_template
 from PIL import Image, ImageDraw, ImageFont
 import random
 import os
+import requests
+import io
 
 app = Flask(__name__)
 
+
 app.config['UPLOAD_FOLDER'] = 'static/images'  # Define the folder to store uploaded images
+app.config['API INFER'] = 'http://localhost:4000/infer'
 
 # Make upload folder
 if not os.path.exists('static/images'):
@@ -16,7 +20,7 @@ if not os.path.exists('static/images'):
 def index():
     return render_template('index.html')
 
-@app.route('/upload', methods=['POST', 'GET'])
+@app.route('/upload', methods=['POST'])
 def upload():
     if 'image' in request.files:
         image = request.files['image']
@@ -29,7 +33,8 @@ def upload():
             return jsonify({'message': 'Image uploaded successfully', 'image_path': image_path, 'width': width, 'height': height})
     
 
-@app.route('/drawBox', methods=['POST', 'GET'])
+# Preview of Bounding Box
+@app.route('/drawBox', methods=['POST'])
 def drawBox():
     box_coordinates = request.json.get('box_coordinates')
     if box_coordinates:
@@ -49,7 +54,8 @@ def drawBox():
         return jsonify({'image_path': new_image_path})
     
 
-@app.route('/drawPoints', methods=['POST', 'GET'])
+# Preview of Points
+@app.route('/drawPoints', methods=['POST'])
 def drawPoints():
     points = request.json.get('points')
     total_points = []
@@ -91,12 +97,54 @@ def drawPoints():
 
         return jsonify({'image_path': new_image_path})
     
-    
-@app.route('/predictEverything', methods=['POST', 'GET'])
+
+# Mask Prediction: "everything"
+@app.route('/predictEverything', methods=['POST'])
 def predictEverything():
+    image_path = 'static/images/image.jpeg'
+
+    with open(image_path, 'rb') as image_file:
+        files = {'image': image_file}
+        data = {'mode': 'everything',
+                'data': ''
+            }
+        
+    response = requests.post(app.config['API INFER'], files=files, data=data)
+    response_json = response.json()
+
+    if response_json.get('result') == 'success':
+        image_file = response_json.get('image')
+        image_bytes = bytearray(image_file.read())
+        image = Image.open(io.BytesIO(image_bytes))
+        image = image.convert("RGB")
+
+        new_image_path = 'static/images/modified_image.jpeg'
+        image.save(new_image_path)
+
+        return jsonify({'image_path': new_image_path})
     
+    else:
+        print('API request failed!')
+
+
+
+
+@app.route('/predictBox', methods=['POST'])
+def predictBox():
+    box_coordinates = request.json.get('box_coordinates')
     
+    if box_coordinates:
+
+        image_path = 'static/images/image.jpeg'
+        image = Image.open(image_path)
+        width, height = image.size
+
+        box_coordinates[0] /= width
+        box_coordinates[1] /= height
+        box_coordinates[2] /= width
+        box_coordinates[3] /= height
+
 
 
 if __name__ == '__main__':
-    app.run(port=4000, debug=True)
+    app.run(port=5000)
