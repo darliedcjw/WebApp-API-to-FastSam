@@ -5,6 +5,7 @@ from pydantic import BaseModel, field_validator
 import io
 import ast
 import re
+import requests
 
 
 import torch
@@ -12,6 +13,7 @@ from FastSAM.fastsam import FastSAM, FastSAMPrompt
 from FastSAM.utils.tools import convert_box_xywh_to_xyxy
 
 app = Flask(__name__)
+app.config['APP RESULT'] = 'http://localhost:5000/result'
 
 
 weights_path = 'FastSAM/weights/FastSAM-x.pt'
@@ -191,6 +193,7 @@ def infer():
     else:
         ann = prompt_process.everything_prompt()
 
+    # Save the mask image
     prompt_process.plot(
         annotations=ann,
         output_path=output + '{}.jpg'.format(output_label),
@@ -201,7 +204,15 @@ def infer():
         better_quality=better_quality,
     )
 
-    return 'Finish'
+    # Return mask image
+    maskImage_path = output + '{}.jpg'.format(output_label)
+    image_file = open(maskImage_path, 'rb')    
+    files = {
+        'results': 'success',
+        'image': image_file
+        }
+
+    return jsonify(files)
 
 if __name__ == "__main__":
     app.run(port=4000)
