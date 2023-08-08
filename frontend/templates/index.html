@@ -1,0 +1,83 @@
+<!-- templates/index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Processing App</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <h1>Image Processing App</h1>
+
+    <!--Upload-->
+    <form id="uploadForm" enctype="multipart/form-data">
+        <input type="file" id="imageInput" accept="image/*">
+        <button type="button" id="uploadButton">Upload Image</button>
+    </form>
+    <!--Upload-->
+    <br>
+    
+    <!--Image Information-->
+    <div>
+        <label for="readOnlyWidth">Image Width:</label>
+        <br>
+        <span id="spanWidth">?</span>
+        <br>
+        <label id="readOnlyHeight" for="readonlyField">Image Height:</label>
+        <br>
+        <span id="spanHeight">?</span>
+    </div>
+    <!--Image Information-->
+    
+    <!--Everything-->
+    <div>
+        <h2>Everything Mode</h2>
+        <button id="predictEverything">Confim and Predict Mask</button>
+    </div>
+    <!--Everything-->
+    
+    <!--Box-->
+    <div>
+        <h2>Box Mode</h2>
+        <input type="text" id="boxInput" placeholder="4 integers: e.g. x1,y1,x2,y2">
+        <button id="drawBox">Draw Box and Preview</button>
+        <button id="predictBox">Confim and Predict Mask</button>
+    </div>
+    <!--Box-->
+    
+    <!--Text-->
+    <div>
+        <h2>Text Mode</h2>
+        <input type="text" id="textInput" placeholder="Enter text">
+        <button id="predictText">Confirm and Predict Mask</button>
+    </div>
+    <!--Text-->
+    
+    <div>
+        <h2>Points Mode</h2>
+        <form id="textInputForm">
+            <div id="inputContainer">
+                <input type="text" class="dynamic-input" placeholder="2 integers: e.g. x1,y1">
+                <input type="text" class="dynamic-input" placeholder="1 integers: e.g. 0">
+                <hr>
+                <input type="text" class="dynamic-input" placeholder="2 integers: e.g. x1,y1">
+                <input type="text" class="dynamic-input" placeholder="1 integers: e.g. 0">
+                <hr>
+            </div>
+            <button type="button" id="addInput">Add Field</button>
+            <button type="button" id="drawPoints">Draw Points and Preview</button>
+            <button id="predictPoints">Confirm and Predict Mask</button>
+        </form>
+    </div>
+
+
+    <!--Image Container-->
+    <div id="imageContainer"></div>
+    <!--Image Container-->
+    
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+</body>
+</html>
