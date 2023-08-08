@@ -13,14 +13,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const boxInput = document.getElementById('boxInput');
     const drawBox = document.getElementById('drawBox')   
     let boxCoordinates = null;
-
+    
     // Draw Points
     const addInput = document.getElementById('addInput');
     const drawPoints = document.getElementById('drawPoints');
     const inputContainer = document.getElementById('inputContainer');
     const form = document.getElementById('textInputForm')
     let points = null;
-
+    
     // Predict Everything
     const predictButton = document.getElementById('predictEverything')
 
@@ -158,7 +158,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Predict Everything
     predictButton.addEventListener('click', () => {
-        const values = boxInput.value.split(',').map(Number);
+        fetch('/predictEverything', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            uploadedImage = data.image_path;
+
+            // Clear the image container before appending the new image
+            imageContainer.innerHTML = '';
+            
+            // Append the new image to the container
+            const imgElement = document.createElement('img');
+            imgElement.src = uploadedImage + '?' + new Date().getTime();
+            imgElement.alt = 'Uploaded Image';
+            imageContainer.appendChild(imgElement);
+        })
+        .catch(error => console.error('Error predicting', error))
     })
 });
 
