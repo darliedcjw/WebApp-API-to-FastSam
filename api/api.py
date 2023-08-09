@@ -141,11 +141,7 @@ def infer():
         data['data'] = request.form['data']
 
     # First Check: Using Pydantic
-    try:
-        InferenceRequestModel(files=files, data=data)
-    
-    except Exception:
-        return jsonify('failed validation'), 404
+    InferenceRequestModel(files=files, data=data)
 
     image_bytes = bytearray(files['image'].read())
     image = Image.open(io.BytesIO(image_bytes))

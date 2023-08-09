@@ -166,6 +166,39 @@ def predictBox():
                 print('API request failed!')
 
 
+@app.route('/predictText', methods=['POST'])
+def predictText():
+    text = request.json.get('text')
+
+    if text:
+        image_path = 'static/images/image.jpeg'
+
+        text_params = '{"text_prompt": "' + text + '"}'
+
+        with open(image_path, 'rb') as image_file:
+            files = {'image': image_file}
+            data = {'mode': 'text',
+                    'data': text_params,
+                }
+            
+            print(data)
+            
+            response = requests.post(app.config['API INFER'], files=files, data=data)
+            response_json = response.json()
+
+            if response_json.get('image') is not None:
+                image_64 = response_json.get('image')
+                image_bytes = base64.b64decode(image_64)
+                image = Image.open(io.BytesIO(image_bytes))
+                image = image.convert("RGB")
+                new_image_path = 'static/images/modified_image.jpeg'
+                image.save(new_image_path)
+
+                return jsonify({'image_path': new_image_path})
+            
+            else:
+                print('API request failed!')
+
 
 if __name__ == '__main__':
     app.run(port=5000, debug=True)

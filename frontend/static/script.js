@@ -27,6 +27,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // Predict Box
     const predictBox = document.getElementById('predictBox')
 
+    // Predict Text
+    const textInput = document.getElementById('textInput')
+    const predictText = document.getElementById('predictText')
+
     // Upload
     uploadButton.addEventListener('click', () => {
         if (imageInput.files.length > 0) {
@@ -216,8 +220,36 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // Predict Text
+    predictText.addEventListener('click', () => {
+        const values = textInput.value;
+        if (values.length !== null) {
+            text = values;
+        }
 
-
+        if (text) {
+            fetch('/predictText', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ text: text })
+            })
+            .then(response => response.json())
+            .then(data => {
+                uploadedImage = data.image_path;
+                // Clear the image container before appending the new image
+                imageContainer.innerHTML = '';
+            
+                // Append the new image to the container
+                const imgElement = document.createElement('img');
+                imgElement.src = uploadedImage + '?' + new Date().getTime();
+                imgElement.alt = 'Uploaded Image';
+                imageContainer.appendChild(imgElement);
+            })
+            .catch(error => console.error('Error predicting', error))
+        }
+    });
 
 
 
