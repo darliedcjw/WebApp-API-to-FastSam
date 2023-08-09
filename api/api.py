@@ -49,7 +49,7 @@ class InferenceRequestModel(BaseModel):
     @classmethod
     def mode_everything_data_must_contain_nothing_else(cls, v: Dict[str, str]) -> Dict[str, str]:
         if v['mode'].strip() in 'everything':
-            assert v['data'] is None, "Too many parameters provided for mode == 'everything'"
+            assert 'data' not in v, "Too many parameters provided for mode == 'everything'"
         return v
 
     # validating that for mode == box, the set of coordinates are received
@@ -146,10 +146,6 @@ def infer():
     image_bytes = bytearray(files['image'].read())
     image = Image.open(io.BytesIO(image_bytes))
     image = image.convert("RGB")
-
-    print(data['data'])
-    print(type(data['data']))
-
 
     # Mode: (1) Everything
     if data['mode'] == 'everything':
