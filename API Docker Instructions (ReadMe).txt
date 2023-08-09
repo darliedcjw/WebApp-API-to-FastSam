@@ -1,4 +1,4 @@
-**There are a total of 7 steps**
+**There are a total of 8 steps**
 API Service is exposed on port:4000
 ==========================================================================================================================================================================================
 1. cd to "api" folder
@@ -7,8 +7,8 @@ API Service is exposed on port:4000
 [Command]: docker build -t api-service-docker .
 ==========================================================================================================================================================================================
 3.  Run Container in background
-[Command]: docker run -d <docker image>
-e.g. docker run -d -it api-service-docker
+[Command]: docker run -p 4000:4000 -d -it <docker image>
+e.g. docker run -p 4000:4000 -d -it api-service-docker
 ==========================================================================================================================================================================================
 4.  Check Container ID
 [Command]: docker ps
@@ -20,11 +20,13 @@ e.g. docker run -d -it api-service-docker
 6. pytest (In the bash terminal)
 [Command]: pytest api_tests.py
 ==========================================================================================================================================================================================
-7. Finish (Exit Bash)
+7. Exit Bash
 [Command]: exit
+==========================================================================================================================================================================================
+8. Ping
+[Command]: curl http://localhost:4000/ping
 ==========================================================================================================================================================================================
 Additional Remarks: 
 Once the docker container is running and the api service is 'live', it is ready to recieve api calls.
 The frontend would be sending api calls to the api service running in the docker.
 Kindly read the frontend instructions for more information.
-==========================================================================================================================================================================================
