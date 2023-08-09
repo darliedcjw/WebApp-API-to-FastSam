@@ -1,4 +1,3 @@
-from datetime import datetime
 from flask import Flask, jsonify, request, render_template
 from PIL import Image, ImageDraw
 import random
@@ -77,8 +76,9 @@ def drawPoints():
             total_points.append([int(point) for point in points[i].split(',')])
             total_label.append(int(points[i+1]))
 
-            # Check points coordinates input
-            assert [len(point) == 2 for point in total_points], 'One of the coordinates is missing!'
+    # Check x,y coordinate pair
+    for point in total_points:
+        assert len(point) == 2, 'One of the coordinates is missing!'
 
     # Draw Points using ellipse (Bigger to visualise)
     if total_points and total_label:
@@ -90,6 +90,7 @@ def drawPoints():
         for _ in set(total_label):
             color_label.append((random.randint(0, 255), random.randint(0, 255), random.randint(0, 255)))
 
+    
         for i, (x,y) in enumerate(total_points):
             radius = 5
             x1, y1 = x - radius, y - radius           
@@ -221,8 +222,9 @@ def predictPoints():
                 total_points.append([int(point) for point in points[i].split(',')])
                 total_label.append(int(points[i+1]))
 
-                # Check points coordinates input
-                assert [len(point) == 2 for point in total_points], 'One of the coordinates is missing!'
+        # Check x,y coordinate pair
+        for point in total_points:
+            assert len(point) == 2, 'One of the coordinates is missing!'
 
         for i in range(len(total_points)):
             total_points[i][0] /= width
@@ -254,4 +256,4 @@ def predictPoints():
 
 
 if __name__ == '__main__':
-    app.run(port=5000)
+    app.run(host='0.0.0.0', port=5000)
