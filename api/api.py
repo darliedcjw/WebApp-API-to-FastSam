@@ -7,7 +7,7 @@ import io
 import ast
 import re
 import json
-import requests
+import base64
 
 
 import torch
@@ -268,13 +268,11 @@ def infer():
 
     # Return mask image
     maskImage_path = output + '{}.jpg'.format(output_label)
-    image_file = open(maskImage_path, 'rb')    
-    files = {
-        'results': 'success',
-        'image': image_file
-        }
+    with open(maskImage_path, 'rb') as image_file:    
+        binary_data = image_file.read()
+        base64_data = base64.b64encode(binary_data).decode('utf-8')
 
-    return jsonify(files)
+        return jsonify({'image': base64_data})
 
 if __name__ == "__main__":
     app.run(port=4000, debug=True)

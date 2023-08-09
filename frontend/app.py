@@ -5,6 +5,7 @@ import random
 import os
 import requests
 import io
+import base64
 
 app = Flask(__name__)
 
@@ -111,12 +112,11 @@ def predictEverything():
         response = requests.post(app.config['API INFER'], files=files, data=data)
         response_json = response.json()
 
-        if response_json.get('result') == 'success':
-            image_file = response_json.get('image')
-            image_bytes = bytearray(image_file.read())
+        if response_json.get('image') is not None:
+            image_64 = response_json.get('image')
+            image_bytes = base64.b64decode(image_64)
             image = Image.open(io.BytesIO(image_bytes))
             image = image.convert("RGB")
-
             new_image_path = 'static/images/modified_image.jpeg'
             image.save(new_image_path)
 
