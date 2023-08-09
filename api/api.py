@@ -1,28 +1,27 @@
+import io
+import ast
+import re
+import base64
+import torch
 from datetime import datetime
 from flask import Flask, jsonify, request
 from PIL import Image
 from pydantic import BaseModel, field_validator
 from typing import Dict, Any
-import io
-import ast
-import re
-import json
-import base64
-
-
-import torch
 from FastSAM.fastsam import FastSAM, FastSAMPrompt
-from FastSAM.utils.tools import convert_box_xywh_to_xyxy
 
 app = Flask(__name__)
+
+
 app.config['APP RESULT'] = 'http://localhost:5000/result'
 
 
+# Load Model
 weights_path = 'FastSAM/weights/FastSAM-x.pt'
 model = FastSAM(weights_path)
 print("Model is hotloaded!")
 
-
+# Pydantic Class
 class InferenceRequestModel(BaseModel):
     files : Dict[str, Any] # TODO establish what the data type of the binary file will be
     data : Dict[str, str]
@@ -119,7 +118,7 @@ def infer():
     conf = 0.4
     output = 'output/'
     output_label = datetime.now().strftime('%Y%m%d_%H%M%S')
-    randomcolor = False
+    randomcolor = True
     better_quality = False
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     retina = True
@@ -143,6 +142,7 @@ def infer():
     # First Check: Using Pydantic
     InferenceRequestModel(files=files, data=data)
 
+    # Image Processing
     image_bytes = bytearray(files['image'].read())
     image = Image.open(io.BytesIO(image_bytes))
     image = image.convert("RGB")
@@ -164,6 +164,7 @@ def infer():
                              Please note that floats can be written as (.1, 0.1 e.g.) \
                              and and only the format 1 without decimal is accepted. \
                              Whitespaces should also be strictly followed.')
+        
         # (2.2) Box Input Check: Normalisation between (0, 1)
         data = ast.literal_eval(data['data'])
         box_prompt = data['box_prompt']
@@ -193,6 +194,7 @@ def infer():
         if not result:
             raise ValueError('Data should be: \'{"text_prompt": "This is a white cat"}\'. \
                              Input must be in type "str"!')
+        
         # (3.2) Text Input Check: Input is not empty string
         data = ast.literal_eval(data['data'])
         text_prompt = data['text_prompt']
@@ -212,7 +214,6 @@ def infer():
                              and and only the number 1 without decimal is accepted.')
 
         data = ast.literal_eval(data['data'])
-
 
         # (4.2) Points Input Check: Len(Points) == Len(Label) and Normalisation between (0, 1)
         point_prompt = data['point_prompt']
@@ -259,6 +260,7 @@ def infer():
     else:
         ann = prompt_process.everything_prompt()
 
+
     # Save the mask image
     prompt_process.plot(
         annotations=ann,
@@ -270,8 +272,10 @@ def infer():
         better_quality=better_quality,
     )
 
+
     # Return mask image
     maskImage_path = output + '{}.jpg'.format(output_label)
+
     with open(maskImage_path, 'rb') as image_file:    
         binary_data = image_file.read()
         base64_data = base64.b64encode(binary_data).decode('utf-8')
