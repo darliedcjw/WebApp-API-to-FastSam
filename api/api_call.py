@@ -38,8 +38,7 @@ def api_call(
             # # everything
             if mode == 'everything':
                 data = {
-                    'mode': 'everything',
-                    'data': ''
+                    'mode': 'everything'
                 }
             
             ## box
@@ -48,6 +47,8 @@ def api_call(
                     'mode': 'box',
                     'data': box_params
                 }
+
+                print(data)
 
             # text
             elif mode == 'text':

@@ -106,27 +106,24 @@ def predictEverything():
     with open(image_path, 'rb') as image_file:
         files = {'image': image_file}
         data = {'mode': 'everything',
-                'data': ''
             }
         
-    response = requests.post(app.config['API INFER'], files=files, data=data)
-    response_json = response.json()
+        response = requests.post(app.config['API INFER'], files=files, data=data)
+        response_json = response.json()
 
-    if response_json.get('result') == 'success':
-        image_file = response_json.get('image')
-        image_bytes = bytearray(image_file.read())
-        image = Image.open(io.BytesIO(image_bytes))
-        image = image.convert("RGB")
+        if response_json.get('result') == 'success':
+            image_file = response_json.get('image')
+            image_bytes = bytearray(image_file.read())
+            image = Image.open(io.BytesIO(image_bytes))
+            image = image.convert("RGB")
 
-        new_image_path = 'static/images/modified_image.jpeg'
-        image.save(new_image_path)
+            new_image_path = 'static/images/modified_image.jpeg'
+            image.save(new_image_path)
 
-        return jsonify({'image_path': new_image_path})
-    
-    else:
-        print('API request failed!')
-
-
+            return jsonify({'image_path': new_image_path})
+        
+        else:
+            print('API request failed!')
 
 
 @app.route('/predictBox', methods=['POST'])
@@ -147,4 +144,4 @@ def predictBox():
 
 
 if __name__ == '__main__':
-    app.run(port=5000)
+    app.run(port=5000, debug=True)

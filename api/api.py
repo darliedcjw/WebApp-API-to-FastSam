@@ -135,8 +135,10 @@ def infer():
     # Image
     files['image'] = request.files['image']
     
+    # Data
     data['mode'] = request.form['mode']
-    data['data'] = request.form['data']
+    if data['mode'] != 'everything':
+        data['data'] = request.form['data']
 
     # First Check: Using Pydantic
     InferenceRequestModel(files=files, data=data)
