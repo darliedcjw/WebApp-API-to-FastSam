@@ -2,9 +2,11 @@ from datetime import datetime
 from flask import Flask, jsonify, request
 from PIL import Image
 from pydantic import BaseModel, field_validator
+from typing import Dict, Any
 import io
 import ast
 import re
+import json
 import requests
 
 
@@ -21,33 +23,93 @@ model = FastSAM(weights_path)
 print("Model is hotloaded!")
 
 
-class InferenceRequest(BaseModel):
-    mode : str
-    data : str
+class InferenceRequestModel(BaseModel):
+    files : Dict[str, Any] # TODO establish what the data type of the binary file will be
+    data : Dict[str, str]
 
-    @field_validator('mode')
+    # validating that the files parameter does contain data
+    @field_validator('files')
     @classmethod
-    def check_mode(cls, v):
-        if v not in ['everything', 'box', 'text', 'points']:
-            raise ValueError('Only accept the following mode: [\'everything\', \'box\', \'text\', \'points\']')
-        return        
+    def file_must_contain_data(cls, v: Dict[str, Any]) -> Dict[str, Any]:
+        value = v['image']
+        if value is None or value == '':
+            raise ValueError("Image must contain data")
+        return v
+
+    # validating that the mode was correctly input
+    @field_validator('data')
+    @classmethod
+    def data_must_contain_mode(cls, v: Dict[str, str]) -> Dict[str, str]:
+        if v['mode'].strip() not in ['everything', 'box', 'text', 'points']:
+            raise ValueError("Only accept the following mode: ['everything', 'box', 'text', 'points']")
+        return v
+
+    # validating that for mode == everything, no other parameters are sent
+    @field_validator('data')
+    @classmethod
+    def mode_everything_data_must_contain_nothing_else(cls, v: Dict[str, str]) -> Dict[str, str]:
+        if v['mode'].strip() in 'everything':
+            assert len(v) == 1, "Too many items in dictionary for mode = 'everything'"
+        return v
+
+    # validating that for mode == box, the set of coordinates are received
+    @field_validator('data')
+    @classmethod
+    def mode_box_data_must_contain_box_prompt(cls, v: Dict[str, str]) -> Dict[str, str]:
+        if v['mode'].strip() in 'box':
+            params = ast.literal_eval(v['data'])
+            assert len(params) == 1, "Incorrect number of params in dictionary for mode = 'box'"
+            assert 'box_prompt' in params, "box_prompt key is missing from data"
+            box_data = params['box_prompt']
+            assert box_data and isinstance(box_data, list) and len(box_data) == 1 and all(isinstance(x, float) for x in box_data[0]) and len(box_data[0]) == 4, "box_prompt value does not follow the proper format"
+        return v
+    
+    # validating that for mode == points, the two additional key value pairs are received, containing at least 2 inner lists (in the point_prompt)
+    @field_validator('data')
+    @classmethod
+    def mode_points_data_must_contain_corresponding_fields(cls, v: Dict[str, str]) -> Dict[str, str]:
+        if v['mode'].strip() in 'points':
+            params = ast.literal_eval(v['data'])
+            assert len(params) == 2, "Incorrect number of items in dictionary for mode = 'points'"
+            assert 'point_prompt' in params, "point_prompt key is missing from data"
+            assert 'point_label' in params, "point_label key is missing from data"
+            point_prompt_list = params['point_prompt']
+            point_label_list = params['point_label']
+
+            assert isinstance(point_prompt_list, list) and len(point_prompt_list) >= 2 and all(isinstance(pair, list) and len(pair) == 2 and all(isinstance(x, float) for x in pair) for pair in point_prompt_list), "point_prompt value does not follow the proper format"
+            assert isinstance(point_label_list, list) and all(isinstance(x, int) for x in point_label_list) and len(point_label_list) == len(point_prompt_list), "point_label value does not follow the proper format"
+        return v
+    
+    # validating that for mode == text, an additional key value pair containing text is received
+    @field_validator('data')
+    @classmethod
+    def mode_text_data_must_contain_string(cls, v: Dict[str, str]) -> Dict[str, str]:
+        if v['mode'].strip() in 'text':
+            params = ast.literal_eval(v['data'])
+            assert len(params) == 1, "Incorrect number of items in dictionary for mode = 'text'"
+            assert 'text_prompt' in params, "text_prompt key is missing from data"
+            text_prompt = v['text_prompt']
+
+            assert text_prompt.replace(" ", "").isalpha(), "text_prompt does not contain alphabetic data"
+
+        return v    
 
             
 # Ping API endpoint
-@app.route("/ping", methods=["GET", "POST"])
+@app.route("/ping", methods=["GET"])
 def ping():
     response = {"message": "pong"}
     return jsonify(response)
 
 
 # Inference API Endpoint
-@app.route('/infer', methods=["GET", "POST"])
+@app.route('/infer', methods=["POST"])
 def infer():
 
     # Check if information is posted correctly
     if 'image' not in request.files:
         return jsonify({'error': 'No image provided.'}), 401
-    if 'mode' not in request.form or 'data' not in request.form:
+    if 'mode' not in request.form:
         return jsonify({'error': 'No mode/data provided.'}), 402
 
 
@@ -67,45 +129,43 @@ def infer():
     point_prompt = "[[0,0]]"
     box_prompt = "[[0,0,0,0]]"
 
+    files = {} 
+    data = {}
+    
     # Image
-    image_file = request.files['image']
-    image_bytes = bytearray(image_file.read())
+    files['image'] = request.files['image']
+    
+    data['mode'] = request.form['mode']
+    data['data'] = request.form['data']
+
+    # First Check: Using Pydantic
+    InferenceRequestModel(files=files, data=data)
+
+    image_bytes = bytearray(files['image'].read())
     image = Image.open(io.BytesIO(image_bytes))
     image = image.convert("RGB")
-    
-    
-    # Data
-    validate_data = {}
-    mode = request.form['mode']
-    data = request.form['data']
-    validate_data['mode'] = mode
-    validate_data['data'] = data
 
-
-    # Mode Check: Using Pydantic
-    InferenceRequest(**validate_data)
 
 
     # Mode: (1) Everything
-    if mode == 'everything':
+    if data['mode'] == 'everything':
         # (1.1) Everything Input Check: Empty String
-        assert data == '', 'Data should be an empty string: for e.g. \'\''
         box_prompt = ast.literal_eval(box_prompt)
         box_prompt = convert_box_xywh_to_xyxy(box_prompt)
         point_prompt = ast.literal_eval(point_prompt)
         label = ast.literal_eval(label)
 
     # Mode: (2) Box
-    elif mode == 'box':
-        # (2.1) Box Input Check: Correct input format and top left coordinates (.0,.0)
-        result = re.search('\{\'|"box_prompt\'|": \[\[0?\.?\d+\s*,0?\.?\d+\s*,0?\.?\d+\s*,0?\.?\d+\s*\]\]\}', data)
+    elif data['mode'] == 'box':
+        # (2.1) Box Input Check: Correct input format
+        result = re.search('\{\'|"box_prompt\'|": \[\[0?\.?\d+\s*,0?\.?\d+\s*,0?\.?\d+\s*,0?\.?\d+\s*\]\]\}', data['data'])
         if not result:
             raise ValueError('Data should be: \'{"box_prompt": [[x_top_left,y_top_left,x_bottom_right,y_bottom_right]]}\' for example \[[.0,.4,.7,1]]\. \
                              Please note that floats can be written as (.1, 0.1 e.g.) \
                              and and only the format 1 without decimal is accepted. \
                              Whitespaces should also be strictly followed.')
         # (2.2) Box Input Check: Normalisation between (0, 1)
-        data = ast.literal_eval(data)
+        data = ast.literal_eval(data['data'])
         box_prompt = data['box_prompt']
         assert .0 <= box_prompt[0][2] <= 1.0, "Index 2 should be between .0 and 1.0"
         assert .0 <= box_prompt[0][3] <= 1.0, "Index 3 should be between .0 and 1.0"
@@ -119,14 +179,14 @@ def infer():
         label = ast.literal_eval(label)
 
     # Mode: (3) Text
-    elif mode == 'text':
+    elif data['mode'] == 'text':
         # (3.1) Text Input Check: Correct input format (str)
-        result = re.search('\{\'|"text_prompt\'|": \'|"[\w\s]*\'|"\}', data)
+        result = re.search('\{\'|"text_prompt\'|": \'|"[\w\s]*\'|"\}', data['data'])
         if not result:
             raise ValueError('Data should be: \'{"text_prompt": "This is a white cat"}\'. \
                              Input must be in type "str"!')
         # (3.2) Text Input Check: Input is not empty string
-        data = ast.literal_eval(data)
+        data = ast.literal_eval(data['data'])
         text_prompt = data['text_prompt']
         assert text_prompt != "", 'String must not be empty'
         
@@ -136,15 +196,15 @@ def infer():
         label = ast.literal_eval(label)
 
     # Mode: (4) Points
-    elif mode == 'points':
+    elif data['mode'] == 'points':
         # (4.1) Points Input Check: Correct input format
-        result = re.search('\{\'|"point_prompt\'|": \[\[0?\.?\d+\s*,0?\.?\d+\s*\](,\s*\[0?\.?\d+\s*,0?\.?\d+\s*\])*\],\s*\'|"point_label\'|": \[(1|0,\s*)*1|0\s*\]\}', data)
+        result = re.search('\{\'|"point_prompt\'|": \[\[0?\.?\d+\s*,0?\.?\d+\s*\](,\s*\[0?\.?\d+\s*,0?\.?\d+\s*\])*\],\s*\'|"point_label\'|": \[(1|0,\s*)*1|0\s*\]\}', data['data'])
         if not result:
             raise ValueError('Data should be: \'{"point_prompt": [[.3,.5],[.6,.8]]}, {"point_label": [1,0]}\' for example. \
                              Please note that floats can be written as (.1, 0.1 e.g.) \
                              and and only the number 1 without decimal is accepted.')
 
-        data = ast.literal_eval(data)
+        data = ast.literal_eval(data['data'])
 
 
         # (4.2) Points Input Check: Len(Points) == Len(Label) and Normalisation between (0, 1)
@@ -215,4 +275,4 @@ def infer():
     return jsonify(files)
 
 if __name__ == "__main__":
-    app.run(port=4000)
+    app.run(port=4000, debug=True)
