@@ -1,9 +1,10 @@
 **There are a total of 7 steps**
+API Service is exposed on port:4000
 ==========================================================================================================================================================================================
 1. cd to "api" folder
 ==========================================================================================================================================================================================
 2. Build Docker Image from Dockerfile
-docker build -t api-service-docker .
+[Command]: docker build -t api-service-docker .
 ==========================================================================================================================================================================================
 3.  Run Container in background
 [Command]: docker run -d <docker image>
@@ -16,38 +17,14 @@ e.g. docker run -d -it api-service-docker
 5.  Create another bash terminal within Docker Container
 [Command]: docker exec -it <first 4 characters> bash
 ==========================================================================================================================================================================================
-6.  API Commands:
-*OPTIONAL* help command: python api_call.py -h
-
-===Ping===
- [Command]: python api_call.py -s 'ping'
-
-==Infer===
-[optional arg]
--ip: Path to image, Default: 'FastSAM/images/cat.jpg'
--bp: Parameters for box, Default: "{'box_prompt': [[.0,.0,.5,.5]]}"
--tp: Parameters for text, Default: "{'text_prompt': 'This is a white cat'}"
--pp: Parameters for points, Default: "{'point_prompt': [[.3,.5],[.7,.3],[.4,.4]], 'point_label': [0,0,1]}"
-
-1. Everything
-[Command]: python api_call.py -s 'infer' -m 'everything'
-
-2. Box
-[Command]: python api_call.py -s 'infer' -m 'box'
-
-3. Text
-[Command]: python api_call.py -s 'infer' -m 'text'
-
-4. Points
-[Command]: python api_call.py -s 'infer' -m 'points'
+6. pytest (In the bash terminal)
+[Command]: pytest api_tests.py
 ==========================================================================================================================================================================================
-7. Exit Bash
+7. Finish (Exit Bash)
 [Command]: exit
 ==========================================================================================================================================================================================
-8.  Copy output images from container to local
-[Command]: docker cp <first 4 characters>:/api/output <destination>
-e.g. docker cp f8ff:/api/output .
-**Take note of your working directory for the destination
-**[For windows]: Alternative, you can use Docker Desktop to retrieve the image.
+Additional Remarks: 
+Once the docker container is running and the api service is 'live', it is ready to recieve api calls.
+The frontend would be sending api calls to the api service running in the docker.
+Kindly read the frontend instructions for more information.
 ==========================================================================================================================================================================================
-THANK YOU FOR YOUR TIME!
