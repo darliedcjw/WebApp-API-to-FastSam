@@ -49,7 +49,7 @@ class InferenceRequestModel(BaseModel):
     @classmethod
     def mode_everything_data_must_contain_nothing_else(cls, v: Dict[str, str]) -> Dict[str, str]:
         if v['mode'].strip() in 'everything':
-            assert len(v) == 1, "Too many items in dictionary for mode = 'everything'"
+            assert v['data'] is None, "Too many parameters provided for mode == 'everything'"
         return v
 
     # validating that for mode == box, the set of coordinates are received
@@ -141,7 +141,11 @@ def infer():
         data['data'] = request.form['data']
 
     # First Check: Using Pydantic
-    InferenceRequestModel(files=files, data=data)
+    try:
+        InferenceRequestModel(files=files, data=data)
+    
+    except Exception:
+        return jsonify('failed validation'), 404
 
     image_bytes = bytearray(files['image'].read())
     image = Image.open(io.BytesIO(image_bytes))
