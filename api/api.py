@@ -88,7 +88,7 @@ class InferenceRequestModel(BaseModel):
             params = ast.literal_eval(v['data'])
             assert len(params) == 1, "Incorrect number of items in dictionary for mode = 'text'"
             assert 'text_prompt' in params, "text_prompt key is missing from data"
-            text_prompt = v['text_prompt']
+            text_prompt = params['text_prompt']
 
             assert text_prompt.replace(" ", "").isalpha(), "text_prompt does not contain alphabetic data"
 
@@ -147,20 +147,22 @@ def infer():
     image = Image.open(io.BytesIO(image_bytes))
     image = image.convert("RGB")
 
+    print(data['data'])
+    print(type(data['data']))
 
 
     # Mode: (1) Everything
     if data['mode'] == 'everything':
         # (1.1) Everything Input Check: Empty String
         box_prompt = ast.literal_eval(box_prompt)
-        box_prompt = convert_box_xywh_to_xyxy(box_prompt)
         point_prompt = ast.literal_eval(point_prompt)
         label = ast.literal_eval(label)
+
 
     # Mode: (2) Box
     elif data['mode'] == 'box':
         # (2.1) Box Input Check: Correct input format
-        result = re.search('\{\'|"box_prompt\'|": \[\[0?\.?\d+\s*,0?\.?\d+\s*,0?\.?\d+\s*,0?\.?\d+\s*\]\]\}', data['data'])
+        result = re.search('\{\'|"box_prompt\'|": \[\[\s*0?\.?\d+,\s*0?\.?\d+,\s*0?\.?\d+,\s*0?\.?\d+\s*\]\]\}', data['data'])
         if not result:
             raise ValueError('Data should be: \'{"box_prompt": [[x_top_left,y_top_left,x_bottom_right,y_bottom_right]]}\' for example \[[.0,.4,.7,1]]\. \
                              Please note that floats can be written as (.1, 0.1 e.g.) \
@@ -169,16 +171,24 @@ def infer():
         # (2.2) Box Input Check: Normalisation between (0, 1)
         data = ast.literal_eval(data['data'])
         box_prompt = data['box_prompt']
+        assert .0 <= box_prompt[0][0] <= 1.0, "Index 0 should be between .0 and 1.0"
+        assert .0 <= box_prompt[0][1] <= 1.0, "Index 1 should be between .0 and 1.0"
         assert .0 <= box_prompt[0][2] <= 1.0, "Index 2 should be between .0 and 1.0"
         assert .0 <= box_prompt[0][3] <= 1.0, "Index 3 should be between .0 and 1.0"
         
         # (2.3.) Rescale bounding box coordinates to orignal size (Else not rescaled for unknown reasons)
+        box_prompt[0][0] = image.size[0]*box_prompt[0][0]
+        box_prompt[0][1] = image.size[1]*box_prompt[0][1]
         box_prompt[0][2] = image.size[0]*box_prompt[0][2]
         box_prompt[0][3] = image.size[1]*box_prompt[0][3]
 
-        box_prompt = convert_box_xywh_to_xyxy(box_prompt)
+        print(box_prompt)
+        print(image.size)
+        
         point_prompt = ast.literal_eval(point_prompt)
         label = ast.literal_eval(label)
+
+        print(box_prompt)
 
     # Mode: (3) Text
     elif data['mode'] == 'text':
@@ -193,7 +203,6 @@ def infer():
         assert text_prompt != "", 'String must not be empty'
         
         box_prompt = ast.literal_eval(box_prompt)
-        box_prompt = convert_box_xywh_to_xyxy(box_prompt)
         point_prompt = ast.literal_eval(point_prompt)
         label = ast.literal_eval(label)
 
@@ -222,7 +231,6 @@ def infer():
             point_prompt[i][1] = int(image.size[1]*point_prompt[i][1]) 
 
         box_prompt = ast.literal_eval(box_prompt)
-        box_prompt = convert_box_xywh_to_xyxy(box_prompt)
         
 
     # Prediction

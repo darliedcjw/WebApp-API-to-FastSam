@@ -22,7 +22,10 @@ document.addEventListener('DOMContentLoaded', () => {
     let points = null;
     
     // Predict Everything
-    const predictButton = document.getElementById('predictEverything')
+    const predictEverything = document.getElementById('predictEverything')
+
+    // Predict Box
+    const predictBox = document.getElementById('predictBox')
 
     // Upload
     uploadButton.addEventListener('click', () => {
@@ -121,6 +124,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     })
     
+    // Add inputs for Points
     addInput.addEventListener('click', () => {
         const newInputContainer = document.createElement('div');
         newInputContainer.className = 'dynamic-input-container';
@@ -157,7 +161,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Predict Everything
-    predictButton.addEventListener('click', () => {
+    predictEverything.addEventListener('click', () => {
         fetch('/predictEverything', {
             method: 'POST',
             headers: {
@@ -179,6 +183,46 @@ document.addEventListener('DOMContentLoaded', () => {
         })
         .catch(error => console.error('Error predicting', error))
     })
+
+    // Predict Box
+    predictBox.addEventListener('click', () => {
+        const values = boxInput.value.split(',').map(Number);
+        if (values.length === 4) {
+            boxCoordinates = values;
+        }
+
+        if (boxCoordinates) {
+            fetch('/predictBox', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ box_coordinates: boxCoordinates })
+            })
+            .then(response => response.json())
+            .then(data => {
+                uploadedImage = data.image_path;
+
+                // Clear the image container before appending the new image
+                imageContainer.innerHTML = '';
+            
+                // Append the new image to the container
+                const imgElement = document.createElement('img');
+                imgElement.src = uploadedImage + '?' + new Date().getTime();
+                imgElement.alt = 'Uploaded Image';
+                imageContainer.appendChild(imgElement);
+            })
+            .catch(error => console.error('Error predicting', error))
+        }
+    });
+
+
+
+
+
+
+
+
 });
 
 
