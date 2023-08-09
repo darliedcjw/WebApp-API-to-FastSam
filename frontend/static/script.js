@@ -30,6 +30,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Predict Text
     const textInput = document.getElementById('textInput')
     const predictText = document.getElementById('predictText')
+    
+    // Predict Points
+    const predictPoints = document.getElementById('predictPoints')
 
     // Upload
     uploadButton.addEventListener('click', () => {
@@ -251,8 +254,37 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // Predict Points
+    predictPoints.addEventListener('click', () => {
+        const dynamicInputs = form.querySelectorAll('.dynamic-input');
+        const inputValues = Array.from(dynamicInputs).map(input => input.value);
+        points = inputValues
+        
+        if (points) {
+            fetch('/predictPoints', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ points: points })
+            })
+            .then(response => response.json())
+            .then(data => {
+                uploadedImage = data.image_path;
 
-
+                // Clear the image container before appending the new image
+                imageContainer.innerHTML = '';
+                
+                // Append the new image to the container
+                const imgElement = document.createElement('img');
+                imgElement.src = uploadedImage + '?' + new Date().getTime();
+                imgElement.alt = 'Uploaded Image';
+                imageContainer.appendChild(imgElement);
+            })
+            .catch(error => console.error('Error predicting', error))
+        }
+    })
+    // 
 
 
 });

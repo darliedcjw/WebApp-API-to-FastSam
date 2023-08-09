@@ -200,5 +200,60 @@ def predictText():
                 print('API request failed!')
 
 
+@app.route('/predictPoints', methods=['POST'])
+def predictPoints():
+    
+    points = request.json.get('points')
+
+    if points:
+
+        image_path = 'static/images/image.jpeg'
+        image = Image.open(image_path)
+        width, height = image.size
+        
+        total_points = []
+        total_label = []
+
+        # Count the number of fields
+        for i in range(len(points)):
+            if i%2 == 0:
+                # Check empty: Drop if either point or label is empty
+                if points[i] == '' or points[i + 1] == '':
+                    continue
+                else:
+                    total_points.append([int(point) for point in points[i].split(',')])
+                    total_label.append(int(points[i+1]))
+        
+        for i in range(len(total_points)):
+            total_points[i][0] /= width
+            total_points[i][1] /= height
+
+        points_params = '{{"point_prompt": {}, "point_label": {}}}'.format(total_points, total_label)
+
+        print(points_params)
+
+        with open(image_path, 'rb') as image_file:
+            files = {'image': image_file}
+            data = {'mode': 'points',
+                    'data': points_params,
+                }
+            
+            response = requests.post(app.config['API INFER'], files=files, data=data)
+            response_json = response.json()
+
+            if response_json.get('image') is not None:
+                image_64 = response_json.get('image')
+                image_bytes = base64.b64decode(image_64)
+                image = Image.open(io.BytesIO(image_bytes))
+                image = image.convert("RGB")
+                new_image_path = 'static/images/modified_image.jpeg'
+                image.save(new_image_path)
+
+                return jsonify({'image_path': new_image_path})
+            
+            else:
+                print('API request failed!')
+
+
 if __name__ == '__main__':
     app.run(port=5000, debug=True)
