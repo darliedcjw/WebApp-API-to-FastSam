@@ -1,5 +1,7 @@
 **There are a total of 8 steps**
 Frontend is exposed on port:5000
+Python Version == "3.11.2"
+OS: Windows
 Remarks: Please ensure that that api service is running on the docker container. Else, refer to the "API Docker Instructions (ReadMe).txt" first.
 ==========================================================================================================================================================================================
 1. Create a venv (Desktop)
