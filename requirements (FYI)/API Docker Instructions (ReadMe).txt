@@ -29,4 +29,4 @@ e.g. docker run -p 4000:4000 -d -it api-service-docker
 Additional Remarks: 
 Once the docker container is running and the api service is 'live', it is ready to recieve api calls.
 The frontend would be sending api calls to the api service running in the docker.
-Kindly read the frontend instructions for more information.
+Kindly read the "Frontend Instructions (ReadMe).txt" for more information.

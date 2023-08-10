@@ -2,7 +2,7 @@
 Frontend is exposed on port:5000
 Remarks: Please ensure that that api service is running on the docker container. Else, refer to the "API Docker Instructions (ReadMe).txt" first.
 ==========================================================================================================================================================================================
-1. Create a venv
+1. Create a venv (Desktop)
 [Command]: py -m venv venv
 ==========================================================================================================================================================================================
 2. Activate venv
@@ -40,7 +40,7 @@ Provide a sentence/text (e.g. This is a white cat).
 Click "Confirm and Predict Mask (Text)" to send an api call to the api service in the docker container.
 
 **Points**
-Provide 2 integers x1,y1 (e.g. 200,300) for first point box and 1 integer (e.g. 0) for the second label box .
+Provide 2 integers x1,y1 (e.g. 200,300) for first point box and 1 integer (e.g. 1 - Mask, 0 -No Mask) for the second label box.
 To add more fields, click "Add Field" and provide the respective inputs.
 Click "Draw Points and Preview" to verify points.
 Click "Confirm and Predict Mask (Points)" to send an api call to the api service in the docker container.
