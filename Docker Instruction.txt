@@ -1,0 +1,53 @@
+1. Build Docker Image from Dockerfile
+docker build -t api-service-docker .
+==========================================================================================================================================================================================
+2. Save Docker Container (Tar)
+docker save -o api-service-docker.tar api-service-docker
+==========================================================================================================================================================================================
+3.  cd to the directory of the docker image tar file
+==========================================================================================================================================================================================
+4.  Load Image [Command]: 
+docker load -i <path to docker image> 
+e.g. docker load -i api-service-docker.tar
+==========================================================================================================================================================================================
+5.  Run Container in background [Command]:
+docker run -d <docker image>
+e.g. docker run -d -it api-service-docker
+==========================================================================================================================================================================================
+6.  Check Container ID [Command]:
+docker ps
+**Take note of the <first 4 characters> of the Container ID
+ ==========================================================================================================================================================================================
+7.  Create another bash terminal within Docker Container [Command]:
+docker exec -it <first 4 characters> bash
+==========================================================================================================================================================================================
+8.  API Commands:
+*OPTIONAL* help command: python api_call.py -h
+
+===Ping===
+python api_call.py -s 'ping'
+
+==Infer===
+[optional arg]
+-ip: Path to image, Default: 'FastSAM/images/cat.jpg'
+-bp: Parameters for box, Default: "{'box_prompt': [[.0,.0,.5,.5]]}"
+-tp: Parameters for text, Default: "{'text_prompt': 'This is a white cat'}"
+-pp: Parameters for points, Default: "{'point_prompt': [[.3,.5],[.7,.3],[.4,.4]], 'point_label': [0,0,1]}"
+
+1. Everything [Command]
+python api_call.py -s 'infer' -m 'everything'
+
+2. Box [Command]
+python api_call.py -s 'infer' -m 'box'
+
+3. Text [Command]
+python api_call.py -s 'infer' -m 'text'
+
+4. Points [Command]
+python api_call.py -s 'infer' -m 'points'
+==========================================================================================================================================================================================
+9.  Copy output images from container to local [Command]
+docker cp <first 4 characters>:/api/output <destination>
+e.g. docker f8ff:/api/output .
+**[For windows]: Alternative, you can use Docker Desktop to retrieve the image if above command does not work
+==========================================================================================================================================================================================
